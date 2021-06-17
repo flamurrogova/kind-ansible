@@ -14,5 +14,6 @@ To run this playbook execute:
 ```
 ansible-playbook main.yaml --ask-become-pass --ask-pass
 ```
+You will have to provide superuser and user passwords.
 
 Tested on Ubuntu 20.04.
