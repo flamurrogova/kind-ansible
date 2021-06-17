@@ -1,0 +1,77 @@
+---
+- name: Configure base system
+  hosts: all
+  become: true
+
+  tasks:
+
+    - name: Install aptitude using apt
+      apt: name=aptitude state=latest update_cache=yes force_apt_get=yes
+
+    - name: Install required system packages
+      apt: name={{ item }} state=latest update_cache=yes
+      loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'python3-pip', 'virtualenv', 'python3-setuptools']
+
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+
+    - name: Update apt and install docker-ce
+      apt: update_cache=yes name=docker-ce state=latest
+
+    - name: Install Docker Module for Python
+      pip:
+        name: docker
+
+    - name: Add the local user to 'docker' group
+      ansible.builtin.user:
+        name: flamur
+        groups: docker
+        append: yes
+
+    - name: Download KIND
+      get_url:
+        url: https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
+        dest: /usr/local/bin/kind
+        mode: 755
+
+    - name: Download/Unarchive helm file
+      unarchive:
+        src: https://get.helm.sh/helm-v3.6.1-linux-amd64.tar.gz
+        dest: /tmp
+        remote_src: yes
+
+    - name: Copy helm binary
+      copy:
+        src: /tmp/linux-amd64/helm
+        dest: /usr/local/bin/helm
+        remote_src: yes
+        mode: 755
+
+    - name: Add an apt signing key for Kubernetes
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+
+    - name: Adding apt repository for Kubernetes
+      apt_repository:
+        repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+        state: present
+        filename: kubernetes.list
+
+    - name: Install Kubernetes binaries
+      apt: 
+        name: "{{ packages }}"
+        state: present
+        update_cache: yes
+      vars:
+        packages:
+          - kubelet 
+          - kubeadm 
+          - kubectl
