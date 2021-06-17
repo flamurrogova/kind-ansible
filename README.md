@@ -8,4 +8,9 @@ The ansible playbook installs:
 - Helm
 - Kubectl
 
+To run this playbook execute:
+```
+ansible-playbook main.yaml --ask-become-pass --ask-pass
+```
+
 Tested on Ubuntu 20.04.
