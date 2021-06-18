@@ -3,15 +3,30 @@
   hosts: all
   become: true
 
-  tasks:
+  vars:
+    - user: flamur
+    - kind_url: https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
+    - helm_url: https://get.helm.sh/helm-v3.6.1-linux-amd64.tar.gz
 
+  tasks:
     - name: Install aptitude using apt
       apt: name=aptitude state=latest update_cache=yes force_apt_get=yes
 
     - name: Install required system packages
-      apt: name={{ item }} state=latest update_cache=yes
-      loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'python3-pip', 'virtualenv', 'python3-setuptools']
-
+      apt: 
+        name: "{{ packages }}"
+        state: present
+        update_cache: yes
+      vars:
+        packages:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - python3-pip
+          - virtualenv
+          - python3-setuptools
+          
     - name: Add Docker GPG apt Key
       apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
@@ -31,19 +46,19 @@
 
     - name: Add the local user to 'docker' group
       ansible.builtin.user:
-        name: flamur
+        name: "{{ user }}"
         groups: docker
         append: yes
 
     - name: Download KIND
       get_url:
-        url: https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
+        url: "{{ kind_url }}"
         dest: /usr/local/bin/kind
         mode: 755
 
     - name: Download/Unarchive helm file
       unarchive:
-        src: https://get.helm.sh/helm-v3.6.1-linux-amd64.tar.gz
+        src: "{{ helm_url }}"
         dest: /tmp
         remote_src: yes
 
@@ -65,13 +80,11 @@
         state: present
         filename: kubernetes.list
 
-    - name: Install Kubernetes binaries
+    - name: Install Kubectl
       apt: 
         name: "{{ packages }}"
         state: present
         update_cache: yes
       vars:
         packages:
-          - kubelet 
-          - kubeadm 
           - kubectl
